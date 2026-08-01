@@ -70,6 +70,15 @@ export type OrganizationMembership = {
   organization?: Organization
 }
 
+export type Division = {
+  id: string
+  organization_id: string
+  name: string
+  slug: string
+  description: string | null
+  active: boolean
+}
+
 export type Breakdown = {
   id: string
   project_id: string
@@ -253,6 +262,25 @@ export const api = {
     ),
   deleteOrganizationMembership: (organizationId: string, membershipId: string) =>
     request<void>(`/api/v1/organizations/${organizationId}/memberships/${membershipId}`, {
+      method: 'DELETE',
+    }),
+  listDivisions: (organizationId: string) =>
+    request<{ divisions: Division[] }>(`/api/v1/organizations/${organizationId}/divisions`),
+  createDivision: (organizationId: string, division: Partial<Division>) =>
+    request<{ division: Division }>(`/api/v1/organizations/${organizationId}/divisions`, {
+      method: 'POST',
+      body: JSON.stringify({ division }),
+    }),
+  updateDivision: (organizationId: string, divisionId: string, division: Partial<Division>) =>
+    request<{ division: Division }>(
+      `/api/v1/organizations/${organizationId}/divisions/${divisionId}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ division }),
+      },
+    ),
+  deleteDivision: (organizationId: string, divisionId: string) =>
+    request<void>(`/api/v1/organizations/${organizationId}/divisions/${divisionId}`, {
       method: 'DELETE',
     }),
   listProjects: () => request<{ projects: Project[] }>('/api/v1/projects'),

@@ -64,6 +64,7 @@ Actors see public breakdowns. Agents also see `representatives_only` breakdowns.
 | GET/PATCH | `/api/v1/representative_profile` | Representative profile (type read-only) |
 | CRUD-ish | `/api/v1/organizations` | Index/show/create/update/destroy (soft-delete) |
 | CRUD | `/api/v1/organizations/:id/memberships` | List/create/update/remove members |
+| CRUD | `/api/v1/organizations/:id/divisions` | Agency/management company divisions |
 | GET | `/api/v1/me/memberships` | Current user's office memberships |
 | CRUD-ish | `/api/v1/projects` | Index/show/create/update |
 | POST | `/api/v1/projects/:id/breakdowns` | Create breakdown + criteria/skills |

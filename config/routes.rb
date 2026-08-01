@@ -10,6 +10,7 @@ Rails.application.routes.draw do
       resources :registrations, only: %i[create]
       resources :organizations, only: %i[index show create update destroy] do
         resources :memberships, controller: "organization_memberships", only: %i[index create update destroy]
+        resources :divisions, only: %i[index create update destroy]
       end
       namespace :me do
         resources :memberships, only: %i[index]
