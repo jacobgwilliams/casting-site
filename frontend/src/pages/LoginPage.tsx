@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth'
+import { defaultPersonaPath } from '../personas'
 
 export function LoginPage() {
   const { user, login } = useAuth()
@@ -17,8 +18,8 @@ export function LoginPage() {
     setSubmitting(true)
     setError(null)
     try {
-      await login(email, password)
-      navigate('/')
+      const signedInUser = await login(email, password)
+      navigate(defaultPersonaPath(signedInUser))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed')
     } finally {

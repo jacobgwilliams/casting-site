@@ -66,8 +66,8 @@ export function RepresentationPage() {
           <p className="muted">My representation</p>
         </div>
         <div className="topbar-actions">
-          <Link to="/" className="ghost button-link">
-            Home
+          <Link to="/actor" className="ghost button-link">
+            Actor home
           </Link>
           <Link to="/account" className="ghost button-link">
             My account

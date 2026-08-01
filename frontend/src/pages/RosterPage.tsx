@@ -107,8 +107,8 @@ export function RosterPage() {
           <p className="muted">My roster</p>
         </div>
         <div className="topbar-actions">
-          <Link to="/" className="ghost button-link">
-            Home
+          <Link to="/rep" className="ghost button-link">
+            Rep home
           </Link>
           <Link to="/offices" className="ghost button-link">
             Offices

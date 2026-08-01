@@ -9,6 +9,8 @@ import {
   type RepresentativeProfile,
 } from '../api'
 import { useAuth } from '../auth'
+import { defaultPersonaPath } from '../personas'
+import { PersonaNav } from '../components/PersonaNav'
 
 type Tab = 'account' | 'actor' | 'casting' | 'representative'
 
@@ -288,6 +290,8 @@ export function AccountPage() {
     }
   }
 
+  const homePath = user ? defaultPersonaPath(user) : '/'
+
   const usedSkillIds = new Set(actorSkills.map((skill) => skill.skill_id))
   const availableSkills = skillCatalog.filter((skill) => !usedSkillIds.has(skill.id))
   const usedAttributeIds = new Set(actorAttributes.map((attribute) => attribute.profile_attribute_id))
@@ -314,8 +318,9 @@ export function AccountPage() {
           <p className="muted">My account</p>
         </div>
         <div className="topbar-actions">
-          <Link to="/" className="ghost button-link">
-            Dashboard
+          <PersonaNav />
+          <Link to={homePath} className="ghost button-link">
+            Home
           </Link>
           <button type="button" className="ghost" onClick={() => void logout()}>
             Sign out

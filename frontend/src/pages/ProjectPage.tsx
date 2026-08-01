@@ -2,10 +2,12 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api, type Project } from '../api'
 import { useAuth } from '../auth'
+import { defaultPersonaPath } from '../personas'
 
 export function ProjectPage() {
   const { id } = useParams<{ id: string }>()
   const { user } = useAuth()
+  const homePath = user ? defaultPersonaPath(user) : '/'
   const [project, setProject] = useState<Project | null>(null)
   const [skills, setSkills] = useState<Array<{ id: string; name: string }>>([])
   const [error, setError] = useState<string | null>(null)
@@ -83,8 +85,8 @@ export function ProjectPage() {
     <div className="app-shell">
       <header className="topbar">
         <div>
-          <Link to="/" className="muted">
-            ← Dashboard
+          <Link to={homePath} className="muted">
+            ← Home
           </Link>
           <p className="brand">{project.name}</p>
           <p className="muted">

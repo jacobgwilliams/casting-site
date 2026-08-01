@@ -2,6 +2,8 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { api, type OrganizationMembership } from '../api'
 import { useAuth } from '../auth'
+import { defaultPersonaPath } from '../personas'
+import { PersonaNav } from '../components/PersonaNav'
 
 const OFFICE_TYPE_LABELS: Record<string, string> = {
   casting_office: 'Casting office',
@@ -73,8 +75,9 @@ export function OfficesPage() {
           <p className="muted">Offices</p>
         </div>
         <div className="topbar-actions">
-          <Link to="/" className="ghost button-link">
-            Dashboard
+          <PersonaNav />
+          <Link to={user ? defaultPersonaPath(user) : '/'} className="ghost button-link">
+            Home
           </Link>
           <Link to="/account" className="ghost button-link">
             My account
