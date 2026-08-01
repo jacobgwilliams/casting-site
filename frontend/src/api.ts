@@ -79,6 +79,38 @@ export type Division = {
   active: boolean
 }
 
+export type ActorRepresentationDivision = {
+  id: string
+  division_id: string
+  division_name: string
+  division_slug: string
+  status: string
+  started_on: string | null
+  ended_on: string | null
+  contacts: Array<{
+    id: string
+    representative_profile_id: string
+    representative_name: string
+    is_primary: boolean
+  }>
+}
+
+export type ActorRepresentation = {
+  id: string
+  actor_profile_id: string
+  actor_name: string
+  organization_id: string
+  organization_name: string
+  organization_type: string
+  status: string
+  exclusive: boolean
+  started_on: string | null
+  ended_on: string | null
+  notes: string | null
+  confirmed_at: string | null
+  divisions: ActorRepresentationDivision[]
+}
+
 export type Breakdown = {
   id: string
   project_id: string
@@ -283,6 +315,38 @@ export const api = {
     request<void>(`/api/v1/organizations/${organizationId}/divisions/${divisionId}`, {
       method: 'DELETE',
     }),
+  listActorRepresentations: (organizationId?: string) => {
+    const query = organizationId ? `?organization_id=${organizationId}` : ''
+    return request<{ actor_representations: ActorRepresentation[] }>(
+      `/api/v1/actor_representations${query}`,
+    )
+  },
+  getActorRepresentation: (id: string) =>
+    request<{ actor_representation: ActorRepresentation }>(`/api/v1/actor_representations/${id}`),
+  createActorRepresentation: (actor_representation: { organization_id: string }) =>
+    request<{ actor_representation: ActorRepresentation }>('/api/v1/actor_representations', {
+      method: 'POST',
+      body: JSON.stringify({ actor_representation }),
+    }),
+  updateActorRepresentation: (
+    id: string,
+    actor_representation: Partial<Pick<ActorRepresentation, 'status' | 'notes'>>,
+  ) =>
+    request<{ actor_representation: ActorRepresentation }>(`/api/v1/actor_representations/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ actor_representation }),
+    }),
+  createRepresentationDivision: (
+    representationId: string,
+    representation_division: { division_id: string },
+  ) =>
+    request<{ representation_division: ActorRepresentationDivision }>(
+      `/api/v1/actor_representations/${representationId}/divisions`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ representation_division }),
+      },
+    ),
   listProjects: () => request<{ projects: Project[] }>('/api/v1/projects'),
   getProject: (id: string) => request<{ project: Project }>(`/api/v1/projects/${id}`),
   createProject: (project: Partial<Project>) =>

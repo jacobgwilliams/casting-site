@@ -15,6 +15,11 @@ Rails.application.routes.draw do
       namespace :me do
         resources :memberships, only: %i[index]
       end
+      resources :actor_representations, only: %i[index show create update] do
+        resources :divisions, controller: "actor_representation_divisions", only: %i[create update destroy] do
+          resources :contacts, controller: "actor_representation_contacts", only: %i[create destroy]
+        end
+      end
       resources :projects, only: %i[index show create update] do
         resources :breakdowns, only: %i[create], shallow: false
       end

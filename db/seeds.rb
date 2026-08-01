@@ -82,6 +82,26 @@ Division.find_or_create_by!(organization: agency, slug: "legit") do |d|
   d.active = true
 end
 
+commercial_division = Division.find_by!(organization: agency, slug: "commercial")
+
+representation = ActorRepresentation.find_or_create_by!(
+  actor_profile: actor_user.actor_profile,
+  organization: agency
+) do |record|
+  record.status = "active"
+  record.started_on = Date.current
+  record.confirmed_at = Time.current
+end
+representation.update!(status: "active", confirmed_at: Time.current) unless representation.active?
+
+ActorRepresentationDivision.find_or_create_by!(
+  actor_representation: representation,
+  division: commercial_division
+) do |record|
+  record.status = "active"
+  record.started_on = Date.current
+end
+
 project = Project.find_or_initialize_by(name: "Summer Soft Drink Spot")
 project.assign_attributes(
   project_type: "commercial",

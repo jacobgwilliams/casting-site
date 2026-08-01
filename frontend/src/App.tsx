@@ -8,6 +8,8 @@ import { OfficesPage } from './pages/OfficesPage'
 import { LoginPage } from './pages/LoginPage'
 import { ProjectPage } from './pages/ProjectPage'
 import { RegisterPage } from './pages/RegisterPage'
+import { RepresentationPage } from './pages/RepresentationPage'
+import { RosterPage } from './pages/RosterPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -26,6 +28,22 @@ export default function App() {
         element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/actor/representation"
+        element={
+          <ProtectedRoute>
+            <RepresentationPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/rep/roster"
+        element={
+          <ProtectedRoute>
+            <RosterPage />
           </ProtectedRoute>
         }
       />

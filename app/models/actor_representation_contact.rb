@@ -15,7 +15,7 @@ class ActorRepresentationContact < ApplicationRecord
     membership_exists = OrganizationMembership.active.exists?(
       organization_id: organization_id,
       user_id: user_id,
-      membership_role: %w[agent manager]
+      membership_role: %w[agent manager owner administrator]
     )
 
     return if membership_exists
