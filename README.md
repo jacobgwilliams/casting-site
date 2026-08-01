@@ -31,6 +31,15 @@ bin/rails server        # http://localhost:3000
 cd frontend && npm run dev   # http://localhost:5173
 ```
 
+## Test
+
+```bash
+bin/rails db:test:prepare
+bin/rails test
+```
+
+CI runs the same test suite on every push and pull request.
+
 Open http://localhost:5173 and sign in with seeded users:
 
 | Email | Password | Persona |
