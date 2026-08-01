@@ -1,0 +1,1048 @@
+CASTING PLATFORM DATABASE SCHEMA
+Working Draft — Version 0.1
+
+============================================================
+PURPOSE
+============================================================
+
+This document defines a first-pass relational database schema for a casting
+platform serving actors, casting directors, agents, and managers.
+
+Core requirements:
+
+- Personas include actors, casting directors, agents, and managers.
+- Casting directors work for Casting Offices and may work for multiple offices.
+- Agents work for an Agency.
+- Managers work for a Management Company.
+- Actors may be represented by multiple agencies and management companies.
+- Actors may have designated representatives at those organizations for
+  specific divisions such as:
+    - On-camera commercial
+    - Print
+    - Theatre
+    - Film and television
+    - Voice-over
+- Availability is preferred over strict consistency where appropriate.
+- Casting professionals can create Projects.
+- Projects contain Breakdowns representing roles or characters being cast.
+- Casting professionals can make Breakdowns visible either:
+    - To representatives only
+    - To the general public
+- Search and matching should support detailed, structured criteria.
+
+============================================================
+CORE DOMAIN MODEL
+============================================================
+
+User
+ ├── ActorProfile
+ ├── CastingProfessionalProfile
+ └── RepresentativeProfile
+          ├── Agent
+          └── Manager
+
+Organization
+ ├── CastingOffice
+ ├── Agency
+ └── ManagementCompany
+
+User <-> Organization
+      through OrganizationMembership
+
+ActorProfile <-> Organization
+      through ActorRepresentation
+
+Project
+ └── Breakdown
+
+============================================================
+1. USERS
+============================================================
+
+The users table should represent authentication and identity, not a single
+industry role.
+
+A person may potentially be:
+
+- An actor and agent
+- An actor and casting director
+- A manager who later joins another company
+- A casting professional who works for multiple offices
+
+Schema:
+
+users
+-----
+id                  uuid primary key
+email               citext not null unique
+first_name          varchar not null
+last_name           varchar not null
+phone_number        varchar
+status              varchar not null default 'active'
+last_signed_in_at   timestamp
+created_at          timestamp not null
+updated_at          timestamp not null
+
+Recommended status values:
+
+- active
+- invited
+- suspended
+- deactivated
+
+Avoid putting columns such as is_actor, is_agent, or role directly on users.
+Those become restrictive as soon as one person occupies multiple personas.
+
+============================================================
+2. PERSONA PROFILES
+============================================================
+
+Each persona gets its own profile table.
+
+------------------------------------------------------------
+2.1 ACTOR PROFILES
+------------------------------------------------------------
+
+actor_profiles
+--------------
+id                  uuid primary key
+user_id             uuid not null unique references users
+professional_name   varchar
+union_status        varchar
+primary_location    varchar
+timezone            varchar
+profile_status      varchar not null default 'draft'
+created_at          timestamp not null
+updated_at          timestamp not null
+
+Possible profile_status values:
+
+- draft
+- active
+- hidden
+- suspended
+
+Most actor-specific details such as appearance, skills, credits, media, and
+preferences should eventually live in related tables rather than turning
+actor_profiles into one very wide table.
+
+------------------------------------------------------------
+2.2 CASTING PROFESSIONAL PROFILES
+------------------------------------------------------------
+
+This covers casting directors, casting associates, casting assistants, and
+potentially other casting-office personnel.
+
+casting_professional_profiles
+-----------------------------
+id                  uuid primary key
+user_id             uuid not null unique references users
+professional_title  varchar
+created_at          timestamp not null
+updated_at          timestamp not null
+
+A casting professional's title can differ by casting office or project.
+Therefore, the global profile should not be the only place where the title
+is stored.
+
+------------------------------------------------------------
+2.3 REPRESENTATIVE PROFILES
+------------------------------------------------------------
+
+Agents and managers share much of the same behavior, so one shared table is
+appropriate initially.
+
+representative_profiles
+-----------------------
+id                    uuid primary key
+user_id               uuid not null unique references users
+representative_type   varchar not null
+created_at            timestamp not null
+updated_at            timestamp not null
+
+representative_type values:
+
+- agent
+- manager
+
+Suggested constraint:
+
+check (representative_type in ('agent', 'manager'))
+
+This supports shared submission, roster, and communication behavior while
+still distinguishing between agents and managers.
+
+============================================================
+3. ORGANIZATIONS
+============================================================
+
+Casting offices, agencies, and management companies share similar foundational
+data, so they can use one organizations table.
+
+organizations
+-------------
+id                    uuid primary key
+name                  varchar not null
+organization_type     varchar not null
+status                varchar not null default 'active'
+website_url           varchar
+phone_number          varchar
+email                 citext
+address_line_1        varchar
+address_line_2        varchar
+city                  varchar
+state_region          varchar
+postal_code           varchar
+country_code          varchar
+created_at            timestamp not null
+updated_at            timestamp not null
+
+organization_type values:
+
+- casting_office
+- agency
+- management_company
+
+Suggested constraint:
+
+check (
+  organization_type in (
+    'casting_office',
+    'agency',
+    'management_company'
+  )
+)
+
+Use organization_type rather than type to avoid unintentionally triggering
+Rails Single Table Inheritance.
+
+============================================================
+4. ORGANIZATION MEMBERSHIPS
+============================================================
+
+This table describes people who work for organizations.
+
+It supports:
+
+- A casting director working for multiple casting offices
+- Multiple agents working at one agency
+- Managers changing management companies
+- Invitations to join an organization
+- Historical employment records
+
+organization_memberships
+------------------------
+id                    uuid primary key
+organization_id       uuid not null references organizations
+user_id               uuid not null references users
+membership_role       varchar not null
+job_title             varchar
+status                varchar not null default 'active'
+started_on            date
+ended_on              date
+invited_at            timestamp
+accepted_at           timestamp
+created_at            timestamp not null
+updated_at            timestamp not null
+
+Possible membership_role values:
+
+- owner
+- administrator
+- casting_director
+- casting_associate
+- casting_assistant
+- agent
+- manager
+- staff
+
+Possible status values:
+
+- invited
+- active
+- inactive
+- removed
+
+Recommended uniqueness:
+
+unique (
+  organization_id,
+  user_id,
+  membership_role,
+  started_on
+)
+
+Do not use a unique constraint on only organization_id and user_id because a
+person may leave and later rejoin an organization.
+
+Application-level validation rules:
+
+- Casting roles belong to a casting_office.
+- Agent roles belong to an agency.
+- Manager roles belong to a management_company.
+
+Examples:
+
+casting_director -> casting_office
+agent            -> agency
+manager          -> management_company
+
+These rules depend on values in another table, so they are awkward to enforce
+with ordinary foreign keys. Initially, enforce them in the Rails domain layer
+and test them thoroughly.
+
+============================================================
+5. DIVISIONS
+============================================================
+
+Agencies and management companies may represent actors in specific areas.
+
+Examples:
+
+- On-camera commercial
+- Print
+- Legit theatrical
+- Film and television
+- Voice-over
+- Theater
+- Dance
+- Influencer
+- Modeling
+
+These should not be a single fixed enum because organizations may use different
+terminology and create custom divisions.
+
+divisions
+---------
+id                    uuid primary key
+organization_id       uuid not null references organizations
+name                  varchar not null
+slug                  varchar not null
+description           text
+active                boolean not null default true
+created_at            timestamp not null
+updated_at            timestamp not null
+
+Constraint:
+
+unique (organization_id, slug)
+
+Example records:
+
+Stewart Talent | Commercial
+Stewart Talent | Legit
+Example Agency | Film and Television
+Example Agency | Print
+
+A standardized taxonomy may eventually be useful:
+
+division_categories
+-------------------
+id
+name
+slug
+
+The divisions table could then include:
+
+division_category_id nullable
+
+This allows one agency to call a division "Legit" and another to call it
+"Film/TV" while the platform understands that both belong to the same broad
+category.
+
+============================================================
+6. ACTOR REPRESENTATION
+============================================================
+
+This is one of the most important relationships in the system.
+
+An actor can:
+
+- Be represented by multiple organizations
+- Have different representation by division
+- Have multiple designated representatives
+- Be represented in one geographic market but not another
+- End or suspend a representation relationship
+- Have overlapping agency and management relationships
+
+Start with the relationship between the actor and organization.
+
+actor_representations
+---------------------
+id                    uuid primary key
+actor_profile_id      uuid not null references actor_profiles
+organization_id       uuid not null references organizations
+status                varchar not null default 'pending'
+started_on            date
+ended_on              date
+exclusive             boolean not null default false
+notes                 text
+invited_by_user_id    uuid references users
+confirmed_at          timestamp
+created_at            timestamp not null
+updated_at            timestamp not null
+
+Possible statuses:
+
+- pending
+- active
+- declined
+- inactive
+- terminated
+
+Do not permanently delete these records when representation ends. Historical
+relationships may matter for submissions, bookings, auditing, and reporting.
+
+============================================================
+7. REPRESENTATION DIVISIONS
+============================================================
+
+An actor's relationship with an organization may cover one or more divisions.
+
+actor_representation_divisions
+------------------------------
+id                        uuid primary key
+actor_representation_id   uuid not null references actor_representations
+division_id                uuid not null references divisions
+status                     varchar not null default 'active'
+started_on                 date
+ended_on                   date
+created_at                 timestamp not null
+updated_at                 timestamp not null
+
+Constraint:
+
+unique (
+  actor_representation_id,
+  division_id,
+  started_on
+)
+
+Example:
+
+Jacob Williams
+  -> Example Talent Agency
+      -> On-Camera Commercial
+      -> Print
+
+Jacob Williams
+  -> Example Management Company
+      -> Film and Television
+
+============================================================
+8. DESIGNATED REPRESENTATIVES
+============================================================
+
+An actor may have specific agents or managers assigned to them for particular
+divisions.
+
+actor_representation_contacts
+-----------------------------
+id                                  uuid primary key
+actor_representation_division_id    uuid not null
+representative_profile_id            uuid not null
+is_primary                           boolean not null default false
+started_on                           date
+ended_on                             date
+created_at                           timestamp not null
+updated_at                           timestamp not null
+
+Example:
+
+Commercial:
+- Primary agent: Jane Smith
+- Secondary agent: Alex Jones
+
+Theatrical:
+- Primary agent: Morgan Lee
+
+Validation should ensure that the representative is an active member of the
+organization attached to the actor representation.
+
+Relationship chain:
+
+Actor
+  -> Representation relationship
+    -> Agency or management company
+      -> Division
+        -> Designated representative
+
+Do not store a simple agent_id on the actor. That model immediately fails for
+actors with multiple representatives and divisions.
+
+============================================================
+9. PROJECTS
+============================================================
+
+Projects represent a production or casting engagement.
+
+Examples:
+
+- Feature film
+- Television episode
+- Commercial campaign
+- Stage production
+- Voice-over project
+- Print campaign
+
+projects
+--------
+id                      uuid primary key
+name                    varchar not null
+project_type            varchar not null
+description             text
+status                  varchar not null default 'draft'
+casting_office_id       uuid references organizations
+created_by_user_id      uuid not null references users
+production_company_name varchar
+union_status            varchar
+shoot_start_date        date
+shoot_end_date          date
+location_summary        varchar
+confidential            boolean not null default false
+created_at              timestamp not null
+updated_at              timestamp not null
+published_at            timestamp
+archived_at             timestamp
+
+Possible project_type values:
+
+- feature_film
+- short_film
+- television
+- commercial
+- theater
+- voice_over
+- print
+- industrial
+- new_media
+- student_film
+- other
+
+Possible status values:
+
+- draft
+- active
+- paused
+- completed
+- cancelled
+- archived
+
+Why keep both created_by_user_id and casting_office_id?
+
+The person creating the project is not necessarily its permanent owner.
+If that person leaves the office, the project should remain with the office.
+
+============================================================
+10. PROJECT CASTING TEAMS
+============================================================
+
+Multiple casting professionals may collaborate on a project, potentially from
+multiple casting offices.
+
+project_casting_team_members
+----------------------------
+id                          uuid primary key
+project_id                  uuid not null references projects
+organization_membership_id  uuid not null references organization_memberships
+project_role                varchar not null
+permissions                 jsonb not null default '{}'
+created_at                  timestamp not null
+updated_at                  timestamp not null
+
+Possible project_role values:
+
+- owner
+- casting_director
+- casting_associate
+- casting_assistant
+- viewer
+
+Example permissions JSON:
+
+{
+  "can_edit_project": true,
+  "can_manage_breakdowns": true,
+  "can_review_submissions": true,
+  "can_invite_team_members": false
+}
+
+A more formal authorization system may replace this later.
+
+============================================================
+11. BREAKDOWNS
+============================================================
+
+One project contains multiple breakdowns, and each breakdown describes one
+role or character being cast.
+
+breakdowns
+----------
+id                      uuid primary key
+project_id              uuid not null references projects
+character_name          varchar not null
+description             text not null
+role_type               varchar
+billing                  varchar
+status                  varchar not null default 'draft'
+visibility              varchar not null default 'representatives_only'
+number_of_roles          integer not null default 1
+audition_required        boolean not null default true
+submission_deadline      timestamp
+work_start_date          date
+work_end_date            date
+compensation_details    text
+location_details        text
+created_by_user_id      uuid not null references users
+created_at              timestamp not null
+updated_at              timestamp not null
+published_at            timestamp
+closed_at               timestamp
+
+Possible status values:
+
+- draft
+- published
+- paused
+- closed
+- cancelled
+- archived
+
+Possible visibility values:
+
+- representatives_only
+- public
+- private
+
+Interpretation:
+
+representatives_only
+  Visible to eligible agents and managers.
+
+public
+  Visible to actors and representatives.
+
+private
+  Visible only to explicitly invited users or organizations.
+
+Even if only public and representatives_only are initially required, private is
+inexpensive to include and likely to be useful for confidential projects.
+
+============================================================
+12. BREAKDOWN ACCESS RULES
+============================================================
+
+A single visibility field handles the basic case, but casting professionals may
+eventually need finer control.
+
+Possible future requirements:
+
+- All representatives
+- Only selected agencies
+- Only selected management companies
+- Only invited actors
+- Representatives first, then public after a specified date
+- Public except for blocked organizations
+
+The first version can rely on visibility while leaving room for explicit access
+grants.
+
+breakdown_access_grants
+-----------------------
+id                    uuid primary key
+breakdown_id          uuid not null references breakdowns
+grantee_type          varchar not null
+grantee_id            uuid not null
+access_level          varchar not null default 'view'
+created_at            timestamp not null
+expires_at            timestamp
+
+Possible grantee types:
+
+- user
+- organization
+- actor_profile
+
+This is a polymorphic association. Polymorphic foreign keys provide weaker
+referential integrity than ordinary foreign keys.
+
+An alternative is to use separate nullable columns:
+
+user_id
+organization_id
+actor_profile_id
+
+Then add a check constraint requiring exactly one to be populated. This provides
+stronger referential integrity.
+
+============================================================
+13. BREAKDOWN CRITERIA
+============================================================
+
+Because search and matching are central to the product, do not put every
+criterion into one JSON document.
+
+Use structured columns and relational tables for criteria that must be:
+
+- Filtered
+- Indexed
+- Validated
+- Compared against actor attributes
+- Explained to the actor
+
+------------------------------------------------------------
+13.1 BASIC ROLE CRITERIA
+------------------------------------------------------------
+
+breakdown_criteria
+------------------
+id                      uuid primary key
+breakdown_id            uuid not null unique references breakdowns
+portrayal_age_min       integer
+portrayal_age_max       integer
+gender_presentation     varchar
+union_requirement       varchar
+local_hire_required     boolean not null default false
+required_location       varchar
+travel_provided         boolean
+work_authorization      varchar
+created_at              timestamp not null
+updated_at              timestamp not null
+
+Keep physical traits and specialized requirements in related tables rather than
+adding dozens of nullable columns.
+
+------------------------------------------------------------
+13.2 SKILLS
+------------------------------------------------------------
+
+skills
+------
+id
+name
+category
+slug
+
+Examples:
+
+- Horseback riding
+- Stage combat
+- Basketball
+- French
+- British RP accent
+- Teleprompter
+- Singing
+
+breakdown_skill_requirements
+----------------------------
+id
+breakdown_id
+skill_id
+requirement_level
+minimum_proficiency
+notes
+
+Possible requirement_level values:
+
+- required
+- preferred
+- nice_to_have
+
+Actor skills:
+
+actor_skills
+------------
+id
+actor_profile_id
+skill_id
+proficiency
+years_experience
+verified
+notes
+
+This makes it possible to distinguish:
+
+required: fluent Spanish
+
+from:
+
+preferred: conversational Spanish
+
+That distinction is critical for reducing bad matches.
+
+------------------------------------------------------------
+13.3 ATTRIBUTES AND IDENTITY-BASED REQUIREMENTS
+------------------------------------------------------------
+
+Certain characteristics are sensitive, complicated, or context-dependent and
+should be modeled carefully.
+
+Potential categories include:
+
+- Searchable professional characteristics
+- Voluntarily disclosed identity information
+- Accessibility information
+- Role portrayal requirements
+- Legally sensitive information
+
+Initial schema:
+
+attributes
+----------
+id
+name
+category
+slug
+is_sensitive
+
+actor_attributes
+----------------
+id
+actor_profile_id
+attribute_id
+visibility
+verified
+
+breakdown_attribute_requirements
+--------------------------------
+id
+breakdown_id
+attribute_id
+requirement_level
+context
+
+This could cover criteria such as:
+
+- Little person
+- Wheelchair user
+- Amputee
+- Specific language fluency
+- Identical twin
+- Visible tattoo
+- Licensed driver
+
+However, some of these are skills, some are physical characteristics, and some
+are sensitive identity or medical information. The taxonomy should eventually
+be split into clearer domains rather than allowing arbitrary attributes
+indefinitely.
+
+============================================================
+14. REPRESENTATION-SPECIFIC BREAKDOWN VISIBILITY
+============================================================
+
+When a breakdown is representatives_only, the actor should likely not see or
+submit to it directly.
+
+Authorization flow:
+
+Can user view breakdown?
+
+1. Is the breakdown published?
+2. Is the project active?
+3. If public:
+   - Actor, agent, or manager may view.
+4. If representatives_only:
+   - User must be an active representative.
+   - Representative must belong to an active agency or management company.
+5. If private:
+   - User or organization must have an access grant.
+
+This logic belongs in an authorization policy, not in the database alone.
+
+Possible Rails/Pundit-style implementation:
+
+class BreakdownPolicy
+  def show?
+    return false unless record.published?
+
+    case record.visibility
+    when "public"
+      authenticated_user?
+    when "representatives_only"
+      user.active_representative?
+    when "private"
+      record.accessible_by?(user)
+    else
+      false
+    end
+  end
+end
+
+============================================================
+15. PROPOSED FIRST-PASS SCHEMA
+============================================================
+
+users
+actor_profiles
+casting_professional_profiles
+representative_profiles
+
+organizations
+organization_memberships
+divisions
+
+actor_representations
+actor_representation_divisions
+actor_representation_contacts
+
+projects
+project_casting_team_members
+breakdowns
+breakdown_criteria
+breakdown_access_grants
+
+skills
+actor_skills
+breakdown_skill_requirements
+
+attributes
+actor_attributes
+breakdown_attribute_requirements
+
+============================================================
+16. RELATIONSHIP DIAGRAM
+============================================================
+
+users
+  ├── actor_profiles
+  ├── casting_professional_profiles
+  ├── representative_profiles
+  └── organization_memberships ───── organizations
+                                         └── divisions
+
+actor_profiles
+  └── actor_representations ───────── organizations
+          └── actor_representation_divisions ─── divisions
+                  └── actor_representation_contacts
+                          └── representative_profiles
+
+organizations (casting_office)
+  └── projects
+        ├── project_casting_team_members
+        └── breakdowns
+              ├── breakdown_criteria
+              ├── breakdown_access_grants
+              ├── breakdown_skill_requirements ─── skills
+              └── breakdown_attribute_requirements ─── attributes
+
+actor_profiles
+  ├── actor_skills ───── skills
+  └── actor_attributes ─ attributes
+
+============================================================
+17. AVAILABILITY OVER CONSISTENCY
+============================================================
+
+The requirement "availability over consistency" is interpreted to mean that
+users should generally be able to continue working even when related or derived
+data is temporarily stale.
+
+------------------------------------------------------------
+17.1 PRESERVE HISTORICAL SNAPSHOTS
+------------------------------------------------------------
+
+A submission should not depend entirely on the actor's current profile.
+
+If an actor changes a headshot, professional name, agency, or skills later, an
+old submission should still show what was submitted at the time.
+
+Future submission records should include snapshots:
+
+submissions
+-----------
+actor_name_snapshot
+profile_snapshot jsonb
+representation_snapshot jsonb
+
+------------------------------------------------------------
+17.2 AVOID DESTRUCTIVE DELETES
+------------------------------------------------------------
+
+Use status fields and effective dates for:
+
+- Organization memberships
+- Representation
+- Divisions
+- Projects
+- Breakdowns
+
+Historical casting records should survive changes elsewhere in the system.
+
+------------------------------------------------------------
+17.3 KEEP AUTHORIZATION AUTHORITATIVE
+------------------------------------------------------------
+
+Availability should not override privacy.
+
+If representation ends or private breakdown access is revoked, authorization
+should reflect that promptly.
+
+------------------------------------------------------------
+17.4 USE ASYNCHRONOUS PROCESSING FOR DERIVED DATA
+------------------------------------------------------------
+
+Search indexes, recommendations, notifications, and match scores may be
+eventually consistent.
+
+The relational database remains authoritative while background jobs update
+derived systems such as:
+
+- OpenSearch
+- Recommendation indexes
+- Notification queues
+- Analytics stores
+
+This provides availability for search and matching without weakening core
+record integrity.
+
+============================================================
+18. SUGGESTED MVP BOUNDARY
+============================================================
+
+Include in the first implementation:
+
+- Users and persona profiles
+- Organizations and memberships
+- Agency and management divisions
+- Actor representation
+- Designated representatives
+- Projects
+- Project casting teams
+- Breakdowns
+- Public versus representatives-only visibility
+- Basic structured breakdown criteria
+- Skills and required/preferred skill matching
+
+Defer initially:
+
+- AI recommendations
+- Submission workflows
+- Audition scheduling
+- Messaging
+- Media hosting
+- Payment processing
+- Contract generation
+- Complex permission matrices
+- Custom organization billing
+- OpenSearch integration
+
+============================================================
+19. FIRST MEANINGFUL VERTICAL SLICE
+============================================================
+
+A casting director belonging to a casting office creates a project, adds a
+breakdown with structured requirements, marks it public or
+representatives-only, and the appropriate users can view it.
+
+This slice validates the foundational:
+
+- Identity model
+- Persona model
+- Organization model
+- Membership model
+- Authorization model
+- Project model
+- Breakdown model
+- Visibility rules
+
+before building submissions or matching.
