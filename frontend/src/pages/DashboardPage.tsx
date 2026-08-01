@@ -75,9 +75,14 @@ export function DashboardPage() {
             {user?.personas.representative && ` · ${user.personas.representative_type}`}
           </p>
         </div>
-        <button type="button" className="ghost" onClick={() => void logout()}>
-          Sign out
-        </button>
+        <div className="topbar-actions">
+          <Link to="/account" className="ghost button-link">
+            My account
+          </Link>
+          <button type="button" className="ghost" onClick={() => void logout()}>
+            Sign out
+          </button>
+        </div>
       </header>
 
       {error && <p className="error banner">{error}</p>}

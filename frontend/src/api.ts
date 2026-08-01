@@ -17,6 +17,26 @@ export type User = {
   representative_profile_id: string | null
 }
 
+export type ActorProfile = {
+  id: string
+  professional_name: string | null
+  union_status: string | null
+  primary_location: string | null
+  timezone: string | null
+  profile_status: string
+  display_name: string
+}
+
+export type CastingProfessionalProfile = {
+  id: string
+  professional_title: string | null
+}
+
+export type RepresentativeProfile = {
+  id: string
+  representative_type: string
+}
+
 export type Organization = {
   id: string
   name: string
@@ -119,6 +139,38 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 export const api = {
   getSession: () => request<{ user: User }>('/api/v1/session'),
+  updateSession: (user: {
+    first_name?: string
+    last_name?: string
+    phone_number?: string | null
+    current_password?: string
+    password?: string
+    password_confirmation?: string
+  }) =>
+    request<{ user: User }>('/api/v1/session', {
+      method: 'PATCH',
+      body: JSON.stringify({ user }),
+    }),
+  getActorProfile: () => request<{ actor_profile: ActorProfile }>('/api/v1/actor_profile'),
+  updateActorProfile: (actor_profile: Partial<ActorProfile>) =>
+    request<{ actor_profile: ActorProfile }>('/api/v1/actor_profile', {
+      method: 'PATCH',
+      body: JSON.stringify({ actor_profile }),
+    }),
+  getCastingProfessionalProfile: () =>
+    request<{ casting_professional_profile: CastingProfessionalProfile }>(
+      '/api/v1/casting_professional_profile',
+    ),
+  updateCastingProfessionalProfile: (casting_professional_profile: Partial<CastingProfessionalProfile>) =>
+    request<{ casting_professional_profile: CastingProfessionalProfile }>(
+      '/api/v1/casting_professional_profile',
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ casting_professional_profile }),
+      },
+    ),
+  getRepresentativeProfile: () =>
+    request<{ representative_profile: RepresentativeProfile }>('/api/v1/representative_profile'),
   login: (email: string, password: string) =>
     request<{ user: User }>('/api/v1/session', {
       method: 'POST',

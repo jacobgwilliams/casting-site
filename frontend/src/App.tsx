@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './auth'
 import { BreakdownPage } from './pages/BreakdownPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { AccountPage } from './pages/AccountPage'
 import { LoginPage } from './pages/LoginPage'
 import { ProjectPage } from './pages/ProjectPage'
 import { RegisterPage } from './pages/RegisterPage'
@@ -23,6 +24,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/account"
+        element={
+          <ProtectedRoute>
+            <AccountPage />
           </ProtectedRoute>
         }
       />

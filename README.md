@@ -47,8 +47,12 @@ Actors see public breakdowns. Agents also see `representatives_only` breakdowns.
 |---|---|---|
 | POST | `/api/v1/session` | Login |
 | GET | `/api/v1/session` | Current user |
+| PATCH | `/api/v1/session` | Update account (name, phone, password) |
 | DELETE | `/api/v1/session` | Logout |
 | POST | `/api/v1/registrations` | Register + personas |
+| GET/PATCH | `/api/v1/actor_profile` | Actor profile |
+| GET/PATCH | `/api/v1/casting_professional_profile` | Casting profile |
+| GET/PATCH | `/api/v1/representative_profile` | Representative profile (type read-only) |
 | CRUD-ish | `/api/v1/organizations` | Index/show/create/update |
 | CRUD-ish | `/api/v1/projects` | Index/show/create/update |
 | POST | `/api/v1/projects/:id/breakdowns` | Create breakdown + criteria/skills |
