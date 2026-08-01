@@ -3,6 +3,8 @@ import { useAuth } from './auth'
 import { BreakdownPage } from './pages/BreakdownPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { AccountPage } from './pages/AccountPage'
+import { OfficePage } from './pages/OfficePage'
+import { OfficesPage } from './pages/OfficesPage'
 import { LoginPage } from './pages/LoginPage'
 import { ProjectPage } from './pages/ProjectPage'
 import { RegisterPage } from './pages/RegisterPage'
@@ -24,6 +26,22 @@ export default function App() {
         element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/offices"
+        element={
+          <ProtectedRoute>
+            <OfficesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/offices/:id"
+        element={
+          <ProtectedRoute>
+            <OfficePage />
           </ProtectedRoute>
         }
       />

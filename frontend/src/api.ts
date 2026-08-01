@@ -48,6 +48,26 @@ export type Organization = {
   city: string | null
   state_region: string | null
   country_code: string | null
+  address_line_1?: string | null
+  address_line_2?: string | null
+  postal_code?: string | null
+  current_membership?: OrganizationMembership | null
+}
+
+export type OrganizationMembership = {
+  id: string
+  organization_id: string
+  user_id: string
+  user_email: string
+  user_full_name: string
+  membership_role: string
+  job_title: string | null
+  status: string
+  started_on: string | null
+  ended_on: string | null
+  invited_at: string | null
+  accepted_at: string | null
+  organization?: Organization
 }
 
 export type Breakdown = {
@@ -193,10 +213,47 @@ export const api = {
     }),
   listOrganizations: () =>
     request<{ organizations: Organization[] }>('/api/v1/organizations'),
+  getOrganization: (id: string) =>
+    request<{ organization: Organization }>(`/api/v1/organizations/${id}`),
   createOrganization: (organization: Partial<Organization>) =>
     request<{ organization: Organization }>('/api/v1/organizations', {
       method: 'POST',
       body: JSON.stringify({ organization }),
+    }),
+  deleteOrganization: (id: string) =>
+    request<void>(`/api/v1/organizations/${id}`, { method: 'DELETE' }),
+  listMyMemberships: () =>
+    request<{ memberships: OrganizationMembership[] }>('/api/v1/me/memberships'),
+  listOrganizationMemberships: (organizationId: string) =>
+    request<{ memberships: OrganizationMembership[] }>(
+      `/api/v1/organizations/${organizationId}/memberships`,
+    ),
+  createOrganizationMembership: (
+    organizationId: string,
+    membership: Partial<OrganizationMembership> & { email?: string },
+  ) =>
+    request<{ membership: OrganizationMembership }>(
+      `/api/v1/organizations/${organizationId}/memberships`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ membership }),
+      },
+    ),
+  updateOrganizationMembership: (
+    organizationId: string,
+    membershipId: string,
+    membership: Partial<OrganizationMembership>,
+  ) =>
+    request<{ membership: OrganizationMembership }>(
+      `/api/v1/organizations/${organizationId}/memberships/${membershipId}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ membership }),
+      },
+    ),
+  deleteOrganizationMembership: (organizationId: string, membershipId: string) =>
+    request<void>(`/api/v1/organizations/${organizationId}/memberships/${membershipId}`, {
+      method: 'DELETE',
     }),
   listProjects: () => request<{ projects: Project[] }>('/api/v1/projects'),
   getProject: (id: string) => request<{ project: Project }>(`/api/v1/projects/${id}`),

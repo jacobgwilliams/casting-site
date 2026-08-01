@@ -3,13 +3,17 @@ module Api
     class OrganizationsController < BaseController
       def index
         organizations = policy_scope(Organization).order(:name)
-        render json: { organizations: organizations.map { |o| OrganizationSerializer.new(o).as_json } }
+        render json: {
+          organizations: organizations.map { |o| OrganizationSerializer.new(o, current_user: current_user).as_json }
+        }
       end
 
       def show
         organization = Organization.find(params[:id])
         authorize organization
-        render json: { organization: OrganizationSerializer.new(organization).as_json }
+        render json: {
+          organization: OrganizationSerializer.new(organization, current_user: current_user).as_json
+        }
       end
 
       def create
@@ -27,7 +31,7 @@ module Api
           )
         end
 
-        render json: { organization: OrganizationSerializer.new(organization).as_json }, status: :created
+        render json: { organization: OrganizationSerializer.new(organization, current_user: current_user).as_json }, status: :created
       rescue ActiveRecord::RecordInvalid => e
         render_validation_errors(e.record)
       end
@@ -37,10 +41,18 @@ module Api
         authorize organization
 
         if organization.update(organization_params)
-          render json: { organization: OrganizationSerializer.new(organization).as_json }
+          render json: { organization: OrganizationSerializer.new(organization, current_user: current_user).as_json }
         else
           render_validation_errors(organization)
         end
+      end
+
+      def destroy
+        organization = Organization.find(params[:id])
+        authorize organization
+
+        organization.update!(status: "inactive")
+        head :no_content
       end
 
       private

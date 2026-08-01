@@ -16,9 +16,16 @@ class OrganizationPolicy < ApplicationPolicy
     membership&.membership_role.in?(%w[owner administrator])
   end
 
+  def destroy?
+    record.organization_memberships.active.exists?(
+      user_id: user.id,
+      membership_role: "owner"
+    )
+  end
+
   class Scope < ApplicationPolicy::Scope
     def resolve
-      scope.all
+      scope.active
     end
   end
 end

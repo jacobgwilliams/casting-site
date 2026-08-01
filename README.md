@@ -62,7 +62,9 @@ Actors see public breakdowns. Agents also see `representatives_only` breakdowns.
 | GET/PATCH | `/api/v1/actor_profile` | Actor profile |
 | GET/PATCH | `/api/v1/casting_professional_profile` | Casting profile |
 | GET/PATCH | `/api/v1/representative_profile` | Representative profile (type read-only) |
-| CRUD-ish | `/api/v1/organizations` | Index/show/create/update |
+| CRUD-ish | `/api/v1/organizations` | Index/show/create/update/destroy (soft-delete) |
+| CRUD | `/api/v1/organizations/:id/memberships` | List/create/update/remove members |
+| GET | `/api/v1/me/memberships` | Current user's office memberships |
 | CRUD-ish | `/api/v1/projects` | Index/show/create/update |
 | POST | `/api/v1/projects/:id/breakdowns` | Create breakdown + criteria/skills |
 | GET | `/api/v1/breakdowns` | Visibility-filtered list |
@@ -74,7 +76,7 @@ Actors see public breakdowns. Agents also see `representatives_only` breakdowns.
 - UUID primary keys throughout
 - `citext` emails
 - Personas are separate profile tables (not role flags on `users`)
-- Organizations use `organization_type` (avoids Rails STI)
+- Organizations use `organization_type` (avoids Rails STI). The UI refers to these as **offices** (casting offices, agencies, management companies).
 - Schema doc table `attributes` is implemented as `profile_attributes` to avoid clashing with ActiveRecord’s `attributes` API
 
 ## Deferred (per schema MVP)

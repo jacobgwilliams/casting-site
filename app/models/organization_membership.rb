@@ -23,11 +23,20 @@ class OrganizationMembership < ApplicationRecord
     message: "already exists for this user, organization, and start date"
   }
   validate :role_matches_organization_type
+  validate :user_persona_matches_role, on: :create
 
   scope :active, -> { where(status: "active") }
 
   def active?
     status == "active"
+  end
+
+  def invited?
+    status == "invited"
+  end
+
+  def removed?
+    status == "removed"
   end
 
   private
@@ -40,5 +49,25 @@ class OrganizationMembership < ApplicationRecord
       :membership_role,
       "'#{membership_role}' is not valid for a #{organization.organization_type}"
     )
+  end
+
+  def user_persona_matches_role
+    return if user.blank? || membership_role.blank?
+    return if membership_role.in?(%w[owner administrator staff])
+
+    case membership_role
+    when "casting_director", "casting_associate", "casting_assistant"
+      unless user.casting_professional?
+        errors.add(:membership_role, "requires a casting professional profile")
+      end
+    when "agent"
+      unless user.representative_profile&.agent?
+        errors.add(:membership_role, "requires an agent profile")
+      end
+    when "manager"
+      unless user.representative_profile&.manager?
+        errors.add(:membership_role, "requires a manager profile")
+      end
+    end
   end
 end

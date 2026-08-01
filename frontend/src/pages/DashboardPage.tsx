@@ -76,6 +76,9 @@ export function DashboardPage() {
           </p>
         </div>
         <div className="topbar-actions">
+          <Link to="/offices" className="ghost button-link">
+            Offices
+          </Link>
           <Link to="/account" className="ghost button-link">
             My account
           </Link>

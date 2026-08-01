@@ -45,7 +45,7 @@ module TestData
     OrganizationMembership.create!(
       organization: office,
       user: user,
-      membership_role: "casting_director",
+      membership_role: "owner",
       status: "active",
       started_on: Date.current,
       accepted_at: Time.current

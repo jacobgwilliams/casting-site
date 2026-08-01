@@ -39,7 +39,7 @@ export function RegisterPage() {
     try {
       await api.register({ user: form, personas })
       await refresh()
-      navigate('/')
+      navigate('/offices')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed')
     } finally {
