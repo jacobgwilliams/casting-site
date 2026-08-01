@@ -20,6 +20,9 @@ Rails.application.routes.draw do
           resources :contacts, controller: "actor_representation_contacts", only: %i[create destroy]
         end
       end
+      resources :actor_skills, only: %i[index create update destroy]
+      resources :actor_attributes, only: %i[index create update destroy]
+      resources :profile_attributes, only: %i[index]
       resources :projects, only: %i[index show create update] do
         resources :breakdowns, only: %i[create], shallow: false
       end

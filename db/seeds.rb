@@ -10,6 +10,20 @@ Skill.find_or_create_by!(slug: "stage-combat") { |s| s.name = "Stage combat"; s.
 Skill.find_or_create_by!(slug: "spanish") { |s| s.name = "Spanish"; s.category = "language" }
 Skill.find_or_create_by!(slug: "teleprompter") { |s| s.name = "Teleprompter"; s.category = "on-camera" }
 
+[
+  [ "Licensed driver", "licensed-driver", "other", false ],
+  [ "Little person", "little-person", "physical", false ],
+  [ "Wheelchair user", "wheelchair-user", "physical", false ],
+  [ "Identical twin", "identical-twin", "other", false ],
+  [ "Visible tattoo", "visible-tattoo", "appearance", false ]
+].each do |name, slug, category, sensitive|
+  ProfileAttribute.find_or_create_by!(slug: slug) do |attribute|
+    attribute.name = name
+    attribute.category = category
+    attribute.is_sensitive = sensitive
+  end
+end
+
 casting_user = User.find_or_initialize_by(email: "casting@example.com")
 casting_user.assign_attributes(
   password: "password123",
@@ -100,6 +114,16 @@ ActorRepresentationDivision.find_or_create_by!(
 ) do |record|
   record.status = "active"
   record.started_on = Date.current
+end
+
+actor_user.actor_profile.actor_skills.find_or_create_by!(skill: Skill.find_by!(slug: "spanish")) do |record|
+  record.proficiency = "fluent"
+  record.years_experience = 8
+end
+
+licensed_driver = ProfileAttribute.find_by!(slug: "licensed-driver")
+actor_user.actor_profile.actor_attributes.find_or_create_by!(profile_attribute: licensed_driver) do |record|
+  record.visibility = "public"
 end
 
 project = Project.find_or_initialize_by(name: "Summer Soft Drink Spot")

@@ -111,6 +111,34 @@ export type ActorRepresentation = {
   divisions: ActorRepresentationDivision[]
 }
 
+export type ActorSkill = {
+  id: string
+  skill_id: string
+  skill_name: string
+  skill_category: string | null
+  proficiency: string | null
+  years_experience: number | null
+  notes: string | null
+  verified: boolean
+}
+
+export type ProfileAttribute = {
+  id: string
+  name: string
+  category: string | null
+  slug: string
+  is_sensitive: boolean
+}
+
+export type ActorAttribute = {
+  id: string
+  profile_attribute_id: string
+  profile_attribute_name: string
+  profile_attribute_category: string | null
+  visibility: string
+  verified: boolean
+}
+
 export type Breakdown = {
   id: string
   project_id: string
@@ -347,6 +375,43 @@ export const api = {
         body: JSON.stringify({ representation_division }),
       },
     ),
+  listActorSkills: () => request<{ actor_skills: ActorSkill[] }>('/api/v1/actor_skills'),
+  createActorSkill: (actor_skill: {
+    skill_id: string
+    proficiency?: string
+    years_experience?: number | null
+    notes?: string | null
+  }) =>
+    request<{ actor_skill: ActorSkill }>('/api/v1/actor_skills', {
+      method: 'POST',
+      body: JSON.stringify({ actor_skill }),
+    }),
+  updateActorSkill: (
+    id: string,
+    actor_skill: Partial<Pick<ActorSkill, 'proficiency' | 'years_experience' | 'notes'>>,
+  ) =>
+    request<{ actor_skill: ActorSkill }>(`/api/v1/actor_skills/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ actor_skill }),
+    }),
+  deleteActorSkill: (id: string) =>
+    request<void>(`/api/v1/actor_skills/${id}`, { method: 'DELETE' }),
+  listActorAttributes: () =>
+    request<{ actor_attributes: ActorAttribute[] }>('/api/v1/actor_attributes'),
+  createActorAttribute: (actor_attribute: { profile_attribute_id: string; visibility?: string }) =>
+    request<{ actor_attribute: ActorAttribute }>('/api/v1/actor_attributes', {
+      method: 'POST',
+      body: JSON.stringify({ actor_attribute }),
+    }),
+  updateActorAttribute: (id: string, actor_attribute: { visibility?: string }) =>
+    request<{ actor_attribute: ActorAttribute }>(`/api/v1/actor_attributes/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ actor_attribute }),
+    }),
+  deleteActorAttribute: (id: string) =>
+    request<void>(`/api/v1/actor_attributes/${id}`, { method: 'DELETE' }),
+  listProfileAttributes: () =>
+    request<{ profile_attributes: ProfileAttribute[] }>('/api/v1/profile_attributes'),
   listProjects: () => request<{ projects: Project[] }>('/api/v1/projects'),
   getProject: (id: string) => request<{ project: Project }>(`/api/v1/projects/${id}`),
   createProject: (project: Partial<Project>) =>
